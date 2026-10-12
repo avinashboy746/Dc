@@ -1,0 +1,11 @@
+{
+  "name": "Discord Browser",
+  "description": "Dedicated mobile-first Android browser for Discord with session persistence, media uploads, dark theme, and built-in APK compiler and downloader.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

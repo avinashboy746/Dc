@@ -1,0 +1,10 @@
+{
+  "name": "discord-browser",
+  "version": "1.0.0",
+  "description": "Discord Browser Android App & APK Download Hub",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node -e 'console.log(\"Build ready\")'"
+  }
+}
