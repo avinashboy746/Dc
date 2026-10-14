@@ -1,30 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+
+    <!-- Bunny Ears Hat -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:pathData="M38,30 Q33,12 40,10 Q47,12 44,30 Z" />
+    <path
+        android:fillColor="#FFD1DC"
+        android:pathData="M39,26 Q36,15 40,13 Q44,15 42,26 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M64,30 Q61,12 68,10 Q75,12 70,30 Z" />
+    <path
+        android:fillColor="#FFD1DC"
+        android:pathData="M66,26 Q63,15 68,13 Q72,15 69,26 Z" />
+
+    <!-- Cute Beret / Bonnet -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,38 Q54,20 82,38 Q78,54 26,38 Z" />
+
+    <!-- Chibi Hair -->
+    <path
+        android:fillColor="#FF88B8"
+        android:pathData="M24,44 Q16,66 28,78 Q36,84 40,78 Q28,68 32,50 Z" />
+    <path
+        android:fillColor="#FF88B8"
+        android:pathData="M84,44 Q92,66 80,78 Q72,84 68,78 Q80,68 76,50 Z" />
+
+    <!-- Face -->
+    <path
+        android:fillColor="#FFF0F5"
+        android:pathData="M32,46 Q54,38 76,46 Q78,74 54,78 Q30,74 32,46 Z" />
+
+    <!-- Front Bangs -->
+    <path
+        android:fillColor="#FFA0C8"
+        android:pathData="M30,44 Q44,56 48,46 Q56,60 62,46 Q72,56 78,44 Q60,34 30,44 Z" />
+
+    <!-- Cute Anime Eyes -->
+    <path
+        android:fillColor="#882255"
+        android:pathData="M40,56m-5,0a5,6 0,1 1,10 0a5,6 0,1 1,-10 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M39,54m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+
+    <path
+        android:fillColor="#882255"
+        android:pathData="M68,56m-5,0a5,6 0,1 1,10 0a5,6 0,1 1,-10 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M67,54m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+
+    <!-- Blush -->
+    <path
+        android:fillColor="#FFB0C8"
+        android:pathData="M35,63m-3,0a3,2 0,1 1,6 0a3,2 0,1 1,-6 0" />
+    <path
+        android:fillColor="#FFB0C8"
+        android:pathData="M73,63m-3,0a3,2 0,1 1,6 0a3,2 0,1 1,-6 0" />
+
+    <!-- Cute Smile -->
+    <path
+        android:fillColor="#882255"
+        android:strokeColor="#882255"
+        android:strokeWidth="1.2"
+        android:pathData="M52,66 Q54,68 56,66" />
+
+    <!-- Ribbon / Bow -->
+    <path
+        android:fillColor="#70D6C2"
+        android:pathData="M32,56 Q24,54 26,60 Q30,58 32,56 Z" />
+    <path
+        android:fillColor="#70D6C2"
+        android:pathData="M76,56 Q84,54 82,60 Q78,58 76,56 Z" />
 </vector>

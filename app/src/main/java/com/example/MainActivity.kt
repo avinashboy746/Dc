@@ -18,12 +18,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,26 +37,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ElectricBolt
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.filled.Gamepad
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WifiOff
@@ -79,33 +62,27 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.DiscordBlurple
@@ -121,10 +98,7 @@ import com.example.ui.theme.DiscordTextMuted
 import com.example.ui.theme.DiscordTextPrimary
 import com.example.ui.theme.DiscordYellow
 import com.example.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -135,7 +109,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme(darkTheme = true) {
-                DiscordBrowserApp(
+                KirbyApp(
                     onRegisterFileChooser = { callback -> filePathCallback = callback },
                     onConsumeFileChooser = {
                         val cb = filePathCallback
@@ -149,49 +123,38 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val DISCORD_APP_URL = "https://discord.com/app"
-const val CREATOR_BRAND = "bcsupportØG"
+const val APP_DISPLAY_NAME = "Kirby"
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun DiscordBrowserApp(
+fun KirbyApp(
     onRegisterFileChooser: (ValueCallback<Array<Uri>>?) -> Unit,
     onConsumeFileChooser: () -> ValueCallback<Array<Uri>>?
 ) {
     val context = LocalContext.current
 
-    // Navigation and tab state (0 = Discord, 1 = Rich Presence/Status, 2 = APK Center, 3 = Settings)
+    // Clean 2-tab navigation: 0 = Discord, 1 = Settings
     var selectedTab by remember { mutableIntStateOf(0) }
-    var isFullScreen by remember { mutableStateOf(false) }
-    var showToolbar by remember { mutableStateOf(true) }
     var useDesktopMode by remember { mutableStateOf(false) }
 
     // 24/7 Always Online Mode State
     var is247OnlineActive by remember { mutableStateOf(DiscordKeepAliveService.isServiceRunning) }
 
-    // Mind Up Game Status State
-    var currentGameStatus by remember { mutableStateOf("Playing Mind Up 🎮") }
-    var customGameName by remember { mutableStateOf("Mind Up") }
-
     // WebView state
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
-    var currentUrl by remember { mutableStateOf(DISCORD_APP_URL) }
     var loadingProgress by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isInitialSplashVisible by remember { mutableStateOf(true) }
 
-    // Debounce tracker for refresh to prevent typing jitter / accidental reloads
-    var lastRefreshTimestamp by remember { mutableLongStateOf(0L) }
-
     // Dialogs
     var showSignOutDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
-    var showMindUpStatusDialog by remember { mutableStateOf(false) }
 
     // File picker launcher for Discord attachments
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -233,10 +196,9 @@ fun DiscordBrowserApp(
         }
     }
 
-    // Hardware back handler
+    // Hardware back navigation
     BackHandler {
         when {
-            isFullScreen -> isFullScreen = false
             selectedTab != 0 -> selectedTab = 0
             webViewInstance != null && webViewInstance!!.canGoBack() -> webViewInstance!!.goBack()
             else -> (context as? Activity)?.moveTaskToBack(true)
@@ -247,93 +209,52 @@ fun DiscordBrowserApp(
         modifier = Modifier.fillMaxSize(),
         containerColor = DiscordDark,
         bottomBar = {
-            if (!isFullScreen) {
-                NavigationBar(
-                    containerColor = DiscordDeepBlack,
-                    contentColor = DiscordTextPrimary,
-                    tonalElevation = 8.dp
-                ) {
-                    NavigationBarItem(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = "Discord",
-                                tint = if (selectedTab == 0) DiscordBlurple else DiscordTextMuted
-                            )
-                        },
-                        label = {
-                            Text(
-                                "Discord",
-                                color = if (selectedTab == 0) DiscordBlurple else DiscordTextMuted,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Gamepad,
-                                contentDescription = "Mind Up Status",
-                                tint = if (selectedTab == 1) DiscordFuchsia else DiscordTextMuted
-                            )
-                        },
-                        label = {
-                            Text(
-                                "Mind Up 🎮",
-                                color = if (selectedTab == 1) DiscordFuchsia else DiscordTextMuted,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = "APK Center",
-                                tint = if (selectedTab == 2) DiscordGreen else DiscordTextMuted
-                            )
-                        },
-                        label = {
-                            Text(
-                                "APK Center",
-                                color = if (selectedTab == 2) DiscordGreen else DiscordTextMuted,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 3,
-                        onClick = { selectedTab = 3 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = if (selectedTab == 3) DiscordYellow else DiscordTextMuted
-                            )
-                        },
-                        label = {
-                            Text(
-                                "Settings",
-                                color = if (selectedTab == 3) DiscordYellow else DiscordTextMuted,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
-                    )
-                }
+            // Clean 2-tab bottom bar: Discord and Settings only!
+            NavigationBar(
+                containerColor = DiscordDeepBlack,
+                contentColor = DiscordTextPrimary,
+                tonalElevation = 6.dp
+            ) {
+                NavigationBarItem(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = "Discord",
+                            tint = if (selectedTab == 0) DiscordBlurple else DiscordTextMuted
+                        )
+                    },
+                    label = {
+                        Text(
+                            "Discord",
+                            color = if (selectedTab == 0) DiscordBlurple else DiscordTextMuted,
+                            fontSize = 12.sp,
+                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = if (selectedTab == 1) DiscordFuchsia else DiscordTextMuted
+                        )
+                    },
+                    label = {
+                        Text(
+                            "Settings",
+                            color = if (selectedTab == 1) DiscordFuchsia else DiscordTextMuted,
+                            fontSize = 12.sp,
+                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(indicatorColor = DiscordSurface)
+                )
             }
         }
     ) { innerPadding ->
@@ -345,83 +266,49 @@ fun DiscordBrowserApp(
         ) {
             when (selectedTab) {
                 0 -> {
-                    // MAIN DISCORD BROWSER SCREEN
+                    // PURE DISCORD WEB EXPERIENCE — NO TOP LINK/URL BAR!
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // 24/7 Status Header Banner
+                        // 24/7 Active indicator (subtle header badge if active)
                         if (is247OnlineActive) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(DiscordGreen.copy(alpha = 0.12f))
-                                    .border(1.dp, DiscordGreen.copy(alpha = 0.3f))
-                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                    .padding(horizontal = 14.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(8.dp)
+                                            .size(7.dp)
                                             .background(DiscordGreen, CircleShape)
                                     )
-                                    Spacer(Modifier.width(8.dp))
+                                    Spacer(Modifier.width(6.dp))
                                     Text(
-                                        "24/7 Always Online Mode Active • $CREATOR_BRAND Engine",
+                                        "24/7 Always Online Active",
                                         color = DiscordGreen,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
-                                Text(
-                                    "Background Ping ON",
-                                    color = DiscordTextMuted,
-                                    fontSize = 10.sp
-                                )
+                                Text("Kirby", color = DiscordTextMuted, fontSize = 10.sp)
                             }
                         }
 
-                        // Top Browser Navigation Toolbar
-                        if (showToolbar && !isFullScreen) {
-                            BrowserToolbar(
-                                canGoBack = canGoBack,
-                                canGoForward = canGoForward,
-                                isLoading = isLoading,
-                                currentUrl = currentUrl,
-                                isDesktopMode = useDesktopMode,
-                                onBack = { webViewInstance?.goBack() },
-                                onForward = { webViewInstance?.goForward() },
-                                onRefresh = {
-                                    // Debounce to prevent rapid typing interruption
-                                    val now = System.currentTimeMillis()
-                                    if (now - lastRefreshTimestamp > 1200) {
-                                        lastRefreshTimestamp = now
-                                        hasError = false
-                                        webViewInstance?.reload()
-                                    }
-                                },
-                                onHome = {
-                                    hasError = false
-                                    webViewInstance?.loadUrl(DISCORD_APP_URL)
-                                },
-                                onToggleFullScreen = { isFullScreen = !isFullScreen },
-                                onOpenStatusModal = { selectedTab = 1 },
-                                onOpenSettings = { selectedTab = 3 }
-                            )
-                        }
-
-                        // Loading Progress Indicator
+                        // Subtle progress indicator while Discord loads
                         if (isLoading && loadingProgress in 1..99) {
                             LinearProgressIndicator(
                                 progress = { loadingProgress / 100f },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(3.dp),
+                                    .height(2.5.dp),
                                 color = DiscordBlurple,
-                                trackColor = DiscordSurface,
+                                trackColor = DiscordDark,
                             )
                         }
 
-                        // Main WebViewContainer implementation
+                        // Main WebViewContainer without any URL address bar
                         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                             WebViewContainer(
                                 url = DISCORD_APP_URL,
@@ -434,7 +321,6 @@ fun DiscordBrowserApp(
                                     hasError = err
                                     errorMessage = msg
                                 },
-                                onUrlChange = { currentUrl = it },
                                 onWebViewReady = { webView -> webViewInstance = webView },
                                 onShowFileChooser = { callback ->
                                     onRegisterFileChooser(callback)
@@ -444,7 +330,7 @@ fun DiscordBrowserApp(
                                         putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                                     }
                                     filePickerLauncher.launch(
-                                        Intent.createChooser(intent, "Select Discord Attachment")
+                                        Intent.createChooser(intent, "Select Attachment")
                                     )
                                 },
                                 modifier = Modifier.fillMaxSize()
@@ -462,81 +348,22 @@ fun DiscordBrowserApp(
                                         try {
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(DISCORD_APP_URL))
                                             context.startActivity(intent)
-                                        } catch (_: Exception) {
-                                        }
+                                        } catch (_: Exception) {}
                                     }
                                 )
                             }
 
                             // Splash screen overlay
                             if (isInitialSplashVisible) {
-                                DiscordSplashScreen(progress = loadingProgress)
-                            }
-
-                            // Full-screen exit FAB
-                            if (isFullScreen) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(16.dp)
-                                ) {
-                                    IconButton(
-                                        onClick = { isFullScreen = false },
-                                        modifier = Modifier
-                                            .size(44.dp)
-                                            .background(DiscordDeepBlack.copy(alpha = 0.85f), CircleShape)
-                                            .border(1.dp, DiscordBlurple.copy(alpha = 0.5f), CircleShape)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.FullscreenExit,
-                                            contentDescription = "Exit Fullscreen",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
+                                KirbySplashScreen(progress = loadingProgress)
                             }
                         }
                     }
                 }
 
                 1 -> {
-                    // MIND UP GAME STATUS & RICH PRESENCE TAB
-                    MindUpStatusScreen(
-                        currentStatus = currentGameStatus,
-                        gameName = customGameName,
-                        onGameNameChange = { customGameName = it },
-                        onApplyStatus = { statusText ->
-                            currentGameStatus = statusText
-                            // Inject status into Discord client session via JavaScript
-                            val script = """
-                                (function() {
-                                    try {
-                                        window.__MIND_UP_STATUS = '$statusText';
-                                        console.log('Discord Status applied: $statusText');
-                                    } catch(e) {}
-                                })();
-                            """.trimIndent()
-                            webViewInstance?.evaluateJavascript(script, null)
-                            Toast.makeText(context, "Discord Status Set: $statusText", Toast.LENGTH_SHORT).show()
-                            selectedTab = 0
-                        },
-                        onOpenDiscord = { selectedTab = 0 }
-                    )
-                }
-
-                2 -> {
-                    // APK DOWNLOAD CENTER TAB
-                    ApkDownloadCenterScreen(
-                        context = context,
-                        onOpenDiscord = { selectedTab = 0 }
-                    )
-                }
-
-                3 -> {
                     // SETTINGS TAB
                     SettingsScreen(
-                        showToolbar = showToolbar,
-                        onToggleToolbar = { showToolbar = it },
                         useDesktopMode = useDesktopMode,
                         onToggleDesktopMode = { useDesktopMode = it },
                         is247Active = is247OnlineActive,
@@ -556,6 +383,11 @@ fun DiscordBrowserApp(
                                 context.stopService(serviceIntent)
                                 Toast.makeText(context, "24/7 Mode Stopped", Toast.LENGTH_SHORT).show()
                             }
+                        },
+                        onReloadDiscord = {
+                            webViewInstance?.reload()
+                            selectedTab = 0
+                            Toast.makeText(context, "Discord reloaded", Toast.LENGTH_SHORT).show()
                         },
                         onRequestPermissions = {
                             val perms = mutableListOf(
@@ -611,7 +443,7 @@ fun DiscordBrowserApp(
                         webViewInstance?.clearCache(true)
                         webViewInstance?.loadUrl(DISCORD_APP_URL)
                         selectedTab = 0
-                        Toast.makeText(context, "Signed out of Discord session", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Signed out of Discord", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = DiscordRed)
                 ) {
@@ -646,7 +478,7 @@ fun DiscordBrowserApp(
                     onClick = {
                         showClearCacheDialog = false
                         webViewInstance?.clearCache(true)
-                        Toast.makeText(context, "Temporary cache cleared", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Cache cleared", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = DiscordBlurple)
                 ) {
@@ -667,13 +499,13 @@ fun DiscordBrowserApp(
             onDismissRequest = { showPrivacyDialog = false },
             containerColor = DiscordSurface,
             title = {
-                Text("Privacy & Security • $CREATOR_BRAND", color = DiscordTextPrimary, fontWeight = FontWeight.Bold)
+                Text("Privacy & Security", color = DiscordTextPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(
                         "• Direct Official Connection:\nConnects directly to https://discord.com over official encrypted HTTPS.\n\n" +
-                                "• Zero Credential Collection:\nCreated by $CREATOR_BRAND with zero telemetry, zero middleman servers, and zero keyloggers.\n\n" +
+                                "• Zero Credential Collection:\nZero telemetry, zero middleman servers, and zero keyloggers.\n\n" +
                                 "• 24/7 Mode Privacy:\nThe 24/7 background service only runs local gateway keep-alive pings to keep your presence online without collecting data.",
                         color = DiscordTextMuted,
                         fontSize = 13.sp,
@@ -698,15 +530,15 @@ fun DiscordBrowserApp(
             onDismissRequest = { showAboutDialog = false },
             containerColor = DiscordSurface,
             title = {
-                Text("About Discord Browser", color = DiscordTextPrimary, fontWeight = FontWeight.Bold)
+                Text("About $APP_DISPLAY_NAME", color = DiscordTextPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
-                    Text("Discord Browser • $CREATOR_BRAND Edition", color = DiscordTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("Version 1.0.0 (Release 1)", color = DiscordBlurple, fontSize = 13.sp)
+                    Text(APP_DISPLAY_NAME, color = DiscordTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Version 1.0.0 (Release 1)", color = DiscordFuchsia, fontSize = 13.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Custom Android mobile browser tailored for Discord with 24/7 Always Online Keep-Alive, 'Playing Mind Up' Rich Presence status, typing stabilization, and native file uploads.",
+                        "Custom clean Discord client with 24/7 Always Online Keep-Alive, typing stabilization, and full-screen view.",
                         color = DiscordTextMuted,
                         fontSize = 13.sp
                     )
@@ -725,391 +557,12 @@ fun DiscordBrowserApp(
 }
 
 @Composable
-fun BrowserToolbar(
-    canGoBack: Boolean,
-    canGoForward: Boolean,
-    isLoading: Boolean,
-    currentUrl: String,
-    isDesktopMode: Boolean,
-    onBack: () -> Unit,
-    onForward: () -> Unit,
-    onRefresh: () -> Unit,
-    onHome: () -> Unit,
-    onToggleFullScreen: () -> Unit,
-    onOpenStatusModal: () -> Unit,
-    onOpenSettings: () -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(DiscordDeepBlack)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, enabled = canGoBack, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = if (canGoBack) DiscordTextPrimary else DiscordTextMuted.copy(alpha = 0.4f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onForward, enabled = canGoForward, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Forward",
-                    tint = if (canGoForward) DiscordTextPrimary else DiscordTextMuted.copy(alpha = 0.4f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onRefresh, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = "Refresh",
-                    tint = DiscordTextPrimary,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .then(if (isLoading) Modifier.rotate(rotation) else Modifier)
-                )
-            }
-            IconButton(onClick = onHome, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Discord Home",
-                    tint = DiscordBlurple,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        // URL / SSL indicator badge with bcsupportØG signature
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 4.dp)
-                .background(DiscordSurface, RoundedCornerShape(16.dp))
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = "Secure",
-                    tint = DiscordGreen,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "discord.com • $CREATOR_BRAND",
-                    color = DiscordTextPrimary,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onOpenStatusModal, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.Default.Gamepad,
-                    contentDescription = "Status",
-                    tint = DiscordFuchsia,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onToggleFullScreen, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.Default.Fullscreen,
-                    contentDescription = "Fullscreen",
-                    tint = DiscordTextPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onOpenSettings, modifier = Modifier.size(36.dp)) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = DiscordTextMuted,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun MindUpStatusScreen(
-    currentStatus: String,
-    gameName: String,
-    onGameNameChange: (String) -> Unit,
-    onApplyStatus: (String) -> Unit,
-    onOpenDiscord: () -> Unit
-) {
-    var customText by remember { mutableStateOf(currentStatus) }
-    var selectedStatusType by remember { mutableStateOf("Playing") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        // Gamer Girl / Creator Banner
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DiscordSurface),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(
-                            Brush.linearGradient(listOf(DiscordFuchsia, DiscordBlurple)),
-                            CircleShape
-                        )
-                        .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Gamepad,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Mind Up Game Status",
-                            color = DiscordTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(DiscordFuchsia.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text("PRO", color = DiscordFuchsia, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Text(
-                        "By $CREATOR_BRAND",
-                        color = DiscordTextMuted,
-                        fontSize = 12.sp
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Status: $currentStatus",
-                        color = DiscordGreen,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            "QUICK GAME STATUS PRESETS",
-            color = DiscordTextMuted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        // Preset 1: Playing Mind Up
-        PresetStatusCard(
-            title = "Playing Mind Up",
-            subtitle = "Shows you playing the Mind Up game on your profile",
-            icon = Icons.Default.Gamepad,
-            badgeColor = DiscordFuchsia,
-            onClick = {
-                onApplyStatus("Playing Mind Up 🎮")
-            }
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        // Preset 2: Mind Up Grinder
-        PresetStatusCard(
-            title = "Grinding Mind Up with $CREATOR_BRAND",
-            subtitle = "Custom gaming session activity status",
-            icon = Icons.Default.Star,
-            badgeColor = DiscordYellow,
-            onClick = {
-                onApplyStatus("Grinding Mind Up with $CREATOR_BRAND ⚡")
-            }
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        // Preset 3: Mind Up Ranked
-        PresetStatusCard(
-            title = "Mind Up Ranked Match • Level 48",
-            subtitle = "Shows competitive game progress in Mind Up",
-            icon = Icons.Default.ElectricBolt,
-            badgeColor = DiscordGreen,
-            onClick = {
-                onApplyStatus("Mind Up Ranked Match • Level 48 🏆")
-            }
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Text(
-            "CUSTOM ACTIVITY EDITOR",
-            color = DiscordTextMuted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DiscordSurface),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Game Name:", color = DiscordTextMuted, fontSize = 12.sp)
-                Spacer(Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = gameName,
-                    onValueChange = onGameNameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = DiscordTextPrimary,
-                        unfocusedTextColor = DiscordTextPrimary,
-                        focusedContainerColor = DiscordChatBg,
-                        unfocusedContainerColor = DiscordChatBg,
-                        focusedIndicatorColor = DiscordBlurple
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    singleLine = true
-                )
-
-                Spacer(Modifier.height(14.dp))
-
-                Text("Custom Status Text:", color = DiscordTextMuted, fontSize = 12.sp)
-                Spacer(Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = customText,
-                    onValueChange = { customText = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = DiscordTextPrimary,
-                        unfocusedTextColor = DiscordTextPrimary,
-                        focusedContainerColor = DiscordChatBg,
-                        unfocusedContainerColor = DiscordChatBg,
-                        focusedIndicatorColor = DiscordBlurple
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    singleLine = true
-                )
-
-                Spacer(Modifier.height(18.dp))
-
-                Button(
-                    onClick = { onApplyStatus(customText) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DiscordBlurple),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Gamepad, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Apply Game Status to Discord", fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        OutlinedButton(
-            onClick = onOpenDiscord,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("Back to Discord Chat", color = DiscordTextPrimary)
-        }
-
-        Spacer(Modifier.height(30.dp))
-    }
-}
-
-@Composable
-fun PresetStatusCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    badgeColor: Color,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = DiscordSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(badgeColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = badgeColor, modifier = Modifier.size(22.dp))
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = DiscordTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                Text(subtitle, color = DiscordTextMuted, fontSize = 12.sp)
-            }
-            Text("Set", color = badgeColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-        }
-    }
-}
-
-@Composable
 fun SettingsScreen(
-    showToolbar: Boolean,
-    onToggleToolbar: (Boolean) -> Unit,
     useDesktopMode: Boolean,
     onToggleDesktopMode: (Boolean) -> Unit,
     is247Active: Boolean,
     onToggle247: (Boolean) -> Unit,
+    onReloadDiscord: () -> Unit,
     onRequestPermissions: () -> Unit,
     onClearCache: () -> Unit,
     onSignOut: () -> Unit,
@@ -1123,7 +576,6 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1137,17 +589,17 @@ fun SettingsScreen(
                     fontSize = 24.sp
                 )
                 Text(
-                    "Discord Browser • $CREATOR_BRAND Edition",
+                    "$APP_DISPLAY_NAME Client Controls",
                     color = DiscordTextMuted,
                     fontSize = 13.sp
                 )
             }
             Box(
                 modifier = Modifier
-                    .background(DiscordBlurple.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .background(DiscordFuchsia.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Text(CREATOR_BRAND, color = DiscordBlurple, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(APP_DISPLAY_NAME, color = DiscordFuchsia, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -1168,16 +620,17 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Browsing Experience
-        SettingsSectionHeader("BROWSER PREFERENCES")
+        // Quick Actions
+        SettingsSectionHeader("QUICK CONTROLS")
 
         SettingsCard {
-            SettingsSwitchRow(
-                icon = Icons.Default.DesktopWindows,
-                title = "Browser Toolbar",
-                subtitle = "Show top navigation bar with Back, Forward, Home and Refresh",
-                checked = showToolbar,
-                onCheckedChange = onToggleToolbar
+            SettingsClickableRow(
+                icon = Icons.Default.Refresh,
+                title = "Reload Discord",
+                subtitle = "Refresh the Discord web client session",
+                actionText = "Reload",
+                actionColor = DiscordBlurple,
+                onClick = onReloadDiscord
             )
 
             HorizontalDivider(color = DiscordDivider, modifier = Modifier.padding(horizontal = 16.dp))
@@ -1200,7 +653,7 @@ fun SettingsScreen(
             SettingsClickableRow(
                 icon = Icons.Default.Videocam,
                 title = "Audio, Video & Notifications",
-                subtitle = "Grant Camera, Mic for calls & Notifications for 24/7 background mode",
+                subtitle = "Grant Camera & Mic for Discord Voice & Video channels",
                 actionText = "Grant",
                 onClick = onRequestPermissions
             )
@@ -1234,17 +687,16 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Creator & Policies
-        SettingsSectionHeader("ABOUT & CREATOR")
+        // About & Links
+        SettingsSectionHeader("ABOUT & POLICIES")
 
         SettingsCard {
             SettingsClickableRow(
-                icon = Icons.Default.Star,
-                title = "Created by $CREATOR_BRAND",
-                subtitle = "Official Verified Edition with 24/7 Engine & Mind Up Status",
-                actionText = "Verified",
-                actionColor = DiscordGreen,
-                onClick = {}
+                icon = Icons.Default.OpenInBrowser,
+                title = "Official Discord Website",
+                subtitle = "Visit discord.com in default device browser",
+                actionText = "Open",
+                onClick = onOpenOfficialWeb
             )
 
             HorizontalDivider(color = DiscordDivider, modifier = Modifier.padding(horizontal = 16.dp))
@@ -1261,7 +713,7 @@ fun SettingsScreen(
 
             SettingsClickableRow(
                 icon = Icons.Default.Info,
-                title = "About App Version",
+                title = "About $APP_DISPLAY_NAME",
                 subtitle = "Version 1.0.0 (Release 1)",
                 actionText = "Info",
                 onClick = onOpenAbout
@@ -1308,7 +760,7 @@ fun SettingsSwitchRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = DiscordBlurple, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = DiscordFuchsia, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = DiscordTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -1319,7 +771,7 @@ fun SettingsSwitchRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = DiscordBlurple,
+                checkedTrackColor = DiscordFuchsia,
                 uncheckedTrackColor = DiscordChatBg
             )
         )
@@ -1353,7 +805,7 @@ fun SettingsClickableRow(
 }
 
 @Composable
-fun DiscordSplashScreen(progress: Int) {
+fun KirbySplashScreen(progress: Int) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1372,30 +824,25 @@ fun DiscordSplashScreen(progress: Int) {
                 modifier = Modifier
                     .size(96.dp)
                     .background(
-                        Brush.linearGradient(listOf(DiscordBlurple, DiscordFuchsia)),
+                        Brush.linearGradient(listOf(DiscordFuchsia, DiscordBlurple)),
                         CircleShape
                     )
-                    .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape),
+                    .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Language,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(54.dp)
-                )
+                Text("🌸", fontSize = 48.sp)
             }
 
             Spacer(Modifier.height(24.dp))
             Text(
-                "Discord Browser",
+                APP_DISPLAY_NAME,
                 color = Color.White,
-                fontSize = 24.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
             )
             Text(
-                "by $CREATOR_BRAND • 24/7 Engine",
+                "Discord Client",
                 color = DiscordFuchsia,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
@@ -1408,13 +855,13 @@ fun DiscordSplashScreen(progress: Int) {
                     .width(180.dp)
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = DiscordBlurple,
+                color = DiscordFuchsia,
                 trackColor = DiscordSurface
             )
 
             Spacer(Modifier.height(12.dp))
             Text(
-                "Connecting securely... $progress%",
+                "Loading Discord... $progress%",
                 color = DiscordTextMuted,
                 fontSize = 12.sp
             )
@@ -1467,22 +914,11 @@ fun DiscordErrorScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Discord Browser could not connect to Discord servers. Please check your internet connection.",
+                    "Could not connect to Discord servers. Please check your internet connection.",
                     color = DiscordTextMuted,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
-
-                if (errorMessage.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Details: $errorMessage",
-                        color = DiscordTextMuted.copy(alpha = 0.7f),
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        textAlign = TextAlign.Center
-                    )
-                }
 
                 Spacer(Modifier.height(24.dp))
                 Button(
@@ -1508,223 +944,5 @@ fun DiscordErrorScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun ApkDownloadCenterScreen(
-    context: Context,
-    onOpenDiscord: () -> Unit
-) {
-    var apkStatus by remember { mutableStateOf("Ready to Download") }
-    var apkFileSize by remember { mutableStateOf("Checking...") }
-    var apkFound by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            val apkFile = File("/app/applet/app/build/outputs/apk/debug/app-debug.apk")
-            if (apkFile.exists() && apkFile.length() > 0) {
-                apkFound = true
-                val sizeMb = "%.1f MB".format(apkFile.length().toDouble() / (1024 * 1024))
-                apkFileSize = sizeMb
-                apkStatus = "Compiled & Verified"
-            } else {
-                apkFound = false
-                apkFileSize = "~21.7 MB (compiled)"
-                apkStatus = "Ready to Build"
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        // Creator branding header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    "APK Build & Download Hub",
-                    color = DiscordTextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
-                Text(
-                    "Official release by $CREATOR_BRAND",
-                    color = DiscordFuchsia,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .background(DiscordGreen.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text("v1.0.0", color = DiscordGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // Main Action Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DiscordSurface),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .background(
-                                Brush.linearGradient(listOf(DiscordBlurple, DiscordFuchsia)),
-                                RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(14.dp))
-
-                    Column {
-                        Text(
-                            "DiscordBrowser-v1.0.apk",
-                            color = DiscordTextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            "Status: $apkStatus • $CREATOR_BRAND",
-                            color = if (apkFound) DiscordGreen else DiscordYellow,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(18.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MetadataBadge(label = "Size", value = apkFileSize)
-                    MetadataBadge(label = "Creator", value = CREATOR_BRAND)
-                    MetadataBadge(label = "24/7 Mode", value = "Enabled")
-                }
-
-                Spacer(Modifier.height(20.dp))
-
-                Button(
-                    onClick = {
-                        val apkFile = File("/app/applet/app/build/outputs/apk/debug/app-debug.apk")
-                        if (apkFile.exists()) {
-                            try {
-                                val sendIntent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, "Discord Browser by $CREATOR_BRAND is ready!")
-                                    type = "text/plain"
-                                }
-                                context.startActivity(Intent.createChooser(sendIntent, "Discord Browser APK"))
-                            } catch (_: Exception) {
-                                Toast.makeText(context, "APK ready: ${apkFile.absolutePath}", Toast.LENGTH_LONG).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "APK compiling...", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DiscordGreen),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null, tint = Color.Black)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Download APK to Phone", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                OutlinedButton(
-                    onClick = onOpenDiscord,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.Language, contentDescription = null, tint = DiscordBlurple, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Launch Discord Web In-App", color = DiscordTextPrimary)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        SettingsSectionHeader("INSTALLATION INSTRUCTIONS")
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DiscordSurface),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                InstallStepItem(step = "1", text = "Click 'Download APK' to save DiscordBrowser-v1.0.apk onto your phone.")
-                Spacer(Modifier.height(12.dp))
-                InstallStepItem(step = "2", text = "Open the file from Downloads notification or File Manager.")
-                Spacer(Modifier.height(12.dp))
-                InstallStepItem(step = "3", text = "Enable 'Allow from this source' in Android Settings if prompted.")
-                Spacer(Modifier.height(12.dp))
-                InstallStepItem(step = "4", text = "Tap Install, then open Discord Browser with 24/7 Always Online and Mind Up Status!")
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
-}
-
-@Composable
-fun MetadataBadge(label: String, value: String) {
-    Box(
-        modifier = Modifier
-            .background(DiscordChatBg, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-    ) {
-        Column {
-            Text(label, color = DiscordTextMuted, fontSize = 10.sp)
-            Text(value, color = DiscordTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
-fun InstallStepItem(step: String, text: String) {
-    Row(verticalAlignment = Alignment.Top) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .background(DiscordBlurple, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(step, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(text, color = DiscordTextMuted, fontSize = 13.sp, lineHeight = 18.sp)
     }
 }
